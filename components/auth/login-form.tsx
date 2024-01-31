@@ -17,8 +17,14 @@ import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import FormError from '../form-error'
 import FormSuccess from '../form-success'
+import { login } from '~/actions/login'
+import { useState, useTransition } from 'react'
 
 export default function LoginForm() {
+  const [error, setError] = useState<string | undefined>('')
+  const [success, setSuccess] = useState<string | undefined>('')
+  const [isPending, startTransition] = useTransition()
+
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
@@ -28,7 +34,15 @@ export default function LoginForm() {
   })
 
   const handleSubmit = (values: z.infer<typeof LoginSchema>) => {
-    console.log(values)
+    setError('')
+    setSuccess('')
+
+    startTransition(() => {
+      login(values).then(data => {
+        setError(data.error)
+        setSuccess(data.success)
+      })
+    })
   }
 
   return (
@@ -50,6 +64,7 @@ export default function LoginForm() {
                   <FormControl>
                     <Input
                       {...field}
+                      disabled={isPending}
                       placeholder="john.doe@example.com"
                       type="email"
                     />
@@ -67,6 +82,7 @@ export default function LoginForm() {
                   <FormControl>
                     <Input
                       {...field}
+                      disabled={isPending}
                       placeholder="************"
                       type="password"
                     />
@@ -76,9 +92,9 @@ export default function LoginForm() {
               )}
             />
           </div>
-          <FormError message="" />
-          <FormSuccess message="" />
-          <Button type="submit" className="w-full">
+          <FormError message={error} />
+          <FormSuccess message={success} />
+          <Button type="submit" className="w-full" disabled={isPending}>
             Login
           </Button>
         </form>
